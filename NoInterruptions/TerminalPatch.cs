@@ -28,16 +28,26 @@ namespace NoInterruptions
             // JFS - Delay checking locomotion in case packet was delayed
             while (Clock.Time < endTime)
             {
-                if (terminal.CurrentStateName != TERM_State.PlayerInteracting)
+                if (!ValidFixState(terminal.CurrentStateName))
                     yield break;
                 yield return null;
             }
 
-            while (terminal.CurrentStateName == TERM_State.PlayerInteracting)
+            while (ValidFixState(terminal.CurrentStateName))
             {
                 AttemptFixState(terminal);
                 yield return null;
             }
+        }
+
+        private static bool ValidFixState(TERM_State state)
+        {
+            return state switch
+            {
+                   TERM_State.PlayerInteracting
+                or TERM_State.Ping => true,
+                _ => false
+            };
         }
 
         private static void AttemptFixState(LG_ComputerTerminal terminal)
@@ -63,7 +73,7 @@ namespace NoInterruptions
         {
             if (__instance.m_localInteractionSource != null)
             {
-                var state = __instance.m_currentState.Cast<LG_TERM_PlayerInteracting>();
+                var state = __instance.GetState((int)TERM_State.PlayerInteracting).Cast<LG_TERM_PlayerInteracting>();
                 state.m_inputTimer = Clock.Time + 0.5f;
                 if (state.m_lastSyncString != __instance.m_currentLine)
                 {
