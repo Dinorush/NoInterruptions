@@ -53,7 +53,10 @@ namespace NoInterruptions
             if (player.Locomotion.m_currentStateEnum != PlayerLocomotion.PLOC_State.OnTerminal)
             {
                 if (player.IsLocallyOwned || (player.transform.position - player.Sync.m_locomotionData.Pos).sqrMagnitude > 0.0001f)
+                {
+                    terminal.m_localInteractionSource = terminal.m_syncedInteractionSource = null;
                     terminal.ChangeState(TERM_State.Awake);
+                }
             }
         }
 
@@ -63,7 +66,7 @@ namespace NoInterruptions
         {
             if (__instance.m_localInteractionSource != null)
             {
-                var state = __instance.m_currentState.Cast<LG_TERM_PlayerInteracting>();
+                var state = __instance.GetState((int)TERM_State.PlayerInteracting).Cast<LG_TERM_PlayerInteracting>();
                 state.m_inputTimer = Clock.Time + 0.5f;
                 if (state.m_lastSyncString != __instance.m_currentLine)
                 {
