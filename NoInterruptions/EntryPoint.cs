@@ -4,7 +4,7 @@ using HarmonyLib;
 
 namespace NoInterruptions
 {
-    [BepInPlugin(MODNAME, MODNAME, "0.1.6")]
+    [BepInPlugin(MODNAME, MODNAME, "0.1.7")]
     internal sealed class EntryPoint : BasePlugin
     {
         public const string MODNAME = "NoInterruptions";
