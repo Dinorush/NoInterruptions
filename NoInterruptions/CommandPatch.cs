@@ -1,63 +1,58 @@
 ﻿using HarmonyLib;
 using LevelGeneration;
-using System;
 using System.Collections.Generic;
+using static LevelGeneration.LG_ComputerTerminalManager;
 
 namespace NoInterruptions
 {
     [HarmonyPatch]
     internal static class CommandPatch
     {
-        struct TermCommand
+        public static void OnCleanup()
         {
-            public TERM_Command command;
-            public string inputLine;
-            public string param1;
-            public string param2;
+            _queuedCommands.Clear();
         }
 
-        private static Dictionary<IntPtr, Queue<TermCommand>> _queuedCommands = new();
-        private static bool _runOriginal = false;
+        private readonly static Dictionary<uint, Queue<pTerminalCommand>> _queuedCommands = new();
 
-        [HarmonyPatch(typeof(LG_ComputerTerminalCommandInterpreter), nameof(LG_ComputerTerminalCommandInterpreter.ReceiveCommand))]
+        [HarmonyPatch(typeof(LG_ComputerTerminalManager), nameof(LG_ComputerTerminalManager.DoTerminalCommandValidation))]
         [HarmonyPrefix]
-        private static bool Pre_ReceiveCommand(LG_ComputerTerminalCommandInterpreter __instance, TERM_Command cmd, string inputLine, string param1, string param2)
+        private static bool Pre_Validation(LG_ComputerTerminalCommandInterpreter __instance, pTerminalCommand data)
         {
-            if (_runOriginal)
-            {
-                _runOriginal = false;
-                return true;
-            }
+            if (!LG_ComputerTerminalManager.Current.m_terminals.ContainsKey(data.ID)) return false;
 
-            var ptr = __instance.Pointer;
-            if (!_queuedCommands.TryGetValue(ptr, out var queue))
-                _queuedCommands.Add(ptr, queue = new());
+            var id = data.ID;
+            if (!_queuedCommands.TryGetValue(id, out var queue))
+                _queuedCommands.Add(id, queue = new());
 
-            queue.Enqueue(new()
-            {
-                command = cmd,
-                inputLine = inputLine,
-                param1 = param1,
-                param2 = param2
-            });
+            queue.Enqueue(data);
             return false;
         }
 
         [HarmonyPatch(typeof(LG_ComputerTerminalCommandInterpreter), nameof(LG_ComputerTerminalCommandInterpreter.UpdateTerminalScreen))]
         [HarmonyPostfix]
-        private static void Post_FireCallbacks(LG_ComputerTerminalCommandInterpreter __instance)
+        private static void Post_Update(LG_ComputerTerminalCommandInterpreter __instance)
         {
-            var ptr = __instance.Pointer;
-            if (!_queuedCommands.TryGetValue(ptr, out var queue)) return;
+            if (!SNetwork.SNet.IsMaster || __instance.OnEndOfQueue != null) return;
 
-            if (__instance.OnEndOfQueue != null) return;
+            var id = __instance.m_terminal.SyncID;
+            if (!_queuedCommands.TryGetValue(id, out var queue)) return;
 
-            _runOriginal = true;
             var cmd = queue.Dequeue();
             if (queue.Count == 0)
-                _queuedCommands.Remove(ptr);
+                _queuedCommands.Remove(id);
 
-            __instance.ReceiveCommand(cmd.command, cmd.inputLine, cmd.param1, cmd.param2);
+            LG_ComputerTerminalManager.Current.m_sendTerminalCommand.Do(cmd);
+        }
+
+        [HarmonyPatch(typeof(LG_TERM_Ping), nameof(LG_TERM_Ping.Ping))]
+        [HarmonyPostfix]
+        private static void Post_Ping(LG_TERM_Ping __instance)
+        {
+            var terminal = __instance.m_terminal;
+            var player = terminal.m_localInteractionSource ?? terminal.m_syncedInteractionSource;
+            if (player == null)
+                terminal.ChangeState(TERM_State.Awake);
         }
     }
 }
