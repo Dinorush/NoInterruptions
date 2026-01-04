@@ -1,10 +1,11 @@
 ﻿using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using NoInterruptions.Patches;
 
 namespace NoInterruptions
 {
-    [BepInPlugin(MODNAME, MODNAME, "0.1.8")]
+    [BepInPlugin(MODNAME, MODNAME, "0.1.9")]
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
     internal sealed class EntryPoint : BasePlugin
     {

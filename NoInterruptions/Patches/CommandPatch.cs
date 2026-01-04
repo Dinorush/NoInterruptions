@@ -3,7 +3,7 @@ using LevelGeneration;
 using System.Collections.Generic;
 using static LevelGeneration.LG_ComputerTerminalManager;
 
-namespace NoInterruptions
+namespace NoInterruptions.Patches
 {
     [HarmonyPatch]
     internal static class CommandPatch
@@ -19,7 +19,7 @@ namespace NoInterruptions
         [HarmonyPrefix]
         private static bool Pre_Validation(LG_ComputerTerminalCommandInterpreter __instance, pTerminalCommand data)
         {
-            if (!LG_ComputerTerminalManager.Current.m_terminals.ContainsKey(data.ID)) return false;
+            if (!Current.m_terminals.ContainsKey(data.ID)) return false;
 
             var id = data.ID;
             if (!_queuedCommands.TryGetValue(id, out var queue))
@@ -42,7 +42,7 @@ namespace NoInterruptions
             if (queue.Count == 0)
                 _queuedCommands.Remove(id);
 
-            LG_ComputerTerminalManager.Current.m_sendTerminalCommand.Do(cmd);
+            Current.m_sendTerminalCommand.Do(cmd);
         }
 
         [HarmonyPatch(typeof(LG_TERM_Ping), nameof(LG_TERM_Ping.Ping))]

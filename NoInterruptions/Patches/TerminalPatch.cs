@@ -4,7 +4,7 @@ using LevelGeneration;
 using Player;
 using System.Collections;
 
-namespace NoInterruptions
+namespace NoInterruptions.Patches
 {
     [HarmonyPatch(typeof(LG_ComputerTerminal))]
     internal static class TerminalPatch

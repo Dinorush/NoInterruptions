@@ -3,7 +3,7 @@ using HarmonyLib;
 using Player;
 using UnityEngine;
 
-namespace NoInterruptions
+namespace NoInterruptions.Patches
 {
     [HarmonyPatch]
     internal static class InteractionPatch
