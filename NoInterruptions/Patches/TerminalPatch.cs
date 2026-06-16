@@ -60,9 +60,25 @@ namespace NoInterruptions.Patches
             }
         }
 
+        private static float _inputTime;
+        [HarmonyPatch(nameof(LG_ComputerTerminal.EnterFPSView))]
+        [HarmonyPrefix]
+        private static void Prefix_EnterFPSView(LG_ComputerTerminal __instance)
+        {
+            if (__instance.m_localInteractionSource != null)
+                _inputTime = Clock.Time + 0.5f;
+        }
+
+        [HarmonyPatch(typeof(LG_TERM_PlayerInteracting), nameof(LG_TERM_PlayerInteracting.Enter))]
+        [HarmonyPostfix]
+        private static void Postfix_EnterPlayerInteracting(LG_TERM_PlayerInteracting __instance)
+        {
+            __instance.m_inputTimer = _inputTime;
+        }
+
         [HarmonyPatch(nameof(LG_ComputerTerminal.ExitFPSView))]
         [HarmonyPostfix]
-        private static void Postfix_ExitInteracting(LG_ComputerTerminal __instance)
+        private static void Postfix_ExitFPSView(LG_ComputerTerminal __instance)
         {
             if (__instance.m_localInteractionSource != null)
             {
