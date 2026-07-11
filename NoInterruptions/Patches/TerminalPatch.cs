@@ -3,12 +3,23 @@ using HarmonyLib;
 using LevelGeneration;
 using Player;
 using System.Collections;
+using static LevelGeneration.LG_ComputerTerminalManager;
 
 namespace NoInterruptions.Patches
 {
     [HarmonyPatch(typeof(LG_ComputerTerminal))]
     internal static class TerminalPatch
     {
+        [HarmonyPatch(typeof(LG_ComputerTerminalManager), nameof(LG_ComputerTerminalManager.DoChangeTerminalStateValidation))]
+        [HarmonyWrapSafe]
+        [HarmonyPrefix]
+        private static bool Postfix_DoValidation(LG_ComputerTerminalManager __instance, pTerminalState data)
+        {
+            if (!__instance.m_terminals.ContainsKey(data.ID)) return false;
+
+            return __instance.m_terminals[data.ID].CurrentStateName != TERM_State.PlayerInteracting || (TERM_State)data.state != TERM_State.Sleeping;
+        }
+
         [HarmonyPatch(nameof(LG_ComputerTerminal.SyncChangeState))]
         [HarmonyPostfix]
         private static void Postfix_EnterInteracting(LG_ComputerTerminal __instance)
@@ -28,8 +39,13 @@ namespace NoInterruptions.Patches
             // JFS - Delay checking locomotion in case packet was delayed
             while (Clock.Time < endTime)
             {
-                if (terminal.CurrentStateName != TERM_State.PlayerInteracting)
+                var state = terminal.CurrentStateName;
+                if (state != TERM_State.PlayerInteracting)
+                {
+                    if (state == TERM_State.Sleeping && terminal.m_localInteractionSource != null)
+                        terminal.ChangeState(TERM_State.PlayerInteracting);
                     yield break;
+                }
                 yield return null;
             }
 
