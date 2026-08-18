@@ -5,7 +5,7 @@ using NoInterruptions.Patches;
 
 namespace NoInterruptions
 {
-    [BepInPlugin(MODNAME, MODNAME, "0.1.11")]
+    [BepInPlugin(MODNAME, MODNAME, "0.1.12")]
     [BepInDependency("dev.gtfomodding.gtfo-api", BepInDependency.DependencyFlags.HardDependency)]
     internal sealed class EntryPoint : BasePlugin
     {
